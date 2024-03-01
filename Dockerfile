@@ -2,7 +2,8 @@ FROM debian:bookworm
 
 # Install WINE, mkvtoolnix, and ffmpeg
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
-  sed -i -e's/ main/ main contrib non-free/g' /etc/apt/sources.list.d/debian.sources && \
+  export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && \
+  sed -i -e's/ main/ main contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources && \
   dpkg --add-architecture i386 && \
   mkdir -pm755 /etc/apt/keyrings && \
   apt-get update && \
@@ -10,8 +11,9 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
   wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
   wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources && \
   apt-get update && \
-  apt-get install -y --install-recommends winehq-stable mkvtoolnix ffmpeg curl xvfb intel-media-va-driver-non-free libvulkan1 libvulkan1:i386 intel-media-va-driver-non-free:i386 unzip vulkan-tools mesa-utils mesa-vulkan-drivers mesa-vulkan-drivers:i386 mesa-vdpau-drivers mesa-vdpau-drivers:i386 mesa-va-drivers mesa-va-drivers:i386 && \
-  debug_packages="nano strace mesa-utils less" && \
+  apt-get install -y mkvtoolnix ffmpeg curl unzip && \
+  apt-get install -y --install-recommends winehq-stable xorg xserver-xorg-video-dummy xvfb libvulkan1 libvulkan1:i386 vulkan-tools mesa-utils mesa-utils-extra mesa-vulkan-drivers mesa-vulkan-drivers:i386 mesa-vdpau-drivers mesa-vdpau-drivers:i386 mesa-va-drivers mesa-va-drivers:i386 && \
+  debug_packages="nano strace less" && \
   apt-get install -y --install-recommends $debug_packages && \
   apt-get clean
 
@@ -77,5 +79,6 @@ RUN \
   && while [ $(stat -c '%Y' $WINEPREFIX/user.reg) = $before ]; do sleep 1; done
 
 COPY --chown=root:root --chmod=755 entrypoint.sh /entrypoint.sh
+COPY xorg.conf /etc/X11/xorg.conf.d/20-virt.conf
 COPY d3d11-triangle.exe /d3d11-triangle.exe
 ENTRYPOINT ["/entrypoint.sh"]

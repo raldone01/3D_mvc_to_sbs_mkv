@@ -3,10 +3,14 @@
 set -ex
 
 # Setup headless X11
-mkdir -p /tmp/.X11-unix
-chmod 1777 /tmp/.X11-unix
-Xvfb :0 -screen 0 1024x768x24 -ac +extension GLX +extension RANDR +extension RENDER +render -noreset &
-export DISPLAY=:0
+# mkdir -p /tmp/.X11-unix
+# chmod 1777 /tmp/.X11-unix
+# Xvfb :0 -screen 0 1024x768x24 -ac +extension GLX +extension RANDR +extension RENDER +render -noreset &
+# export DISPLAY=:0
+
+# use xorg
+Xorg -noreset +extension GLX +extension RANDR +extension RENDER -logfile ./10.log -config /etc/X11/xorg.conf :10 &
+export DISPLAY=:10
 
 # Converts the input mkv video stream to a side-by-side (sbs) mkv video stream and keeps audio, subtitles...
 left_input_path=$1
