@@ -25,6 +25,7 @@ docker run --rm -it -v ./input:/input -v ./output:/output mvc_to_sbs /input/inpu
 # debug command
 docker run --rm -it --entrypoint /bin/bash -v ./input:/input -v ./output:/output mvc_to_sbs
 /entrypoint.sh /input/input_file.mkv nothing /output/output_file.mkv
+wine /usr/local/bin/d3d11-triangle/d3d11-triangle.exe
 ```
 
 ```bash

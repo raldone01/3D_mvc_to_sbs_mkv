@@ -1,20 +1,19 @@
 FROM debian:bookworm
 
-# Install WINE, mkvtoolnix, and ffmpeg
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
   export DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true && \
   sed -i -e's/ main/ main contrib non-free non-free-firmware/g' /etc/apt/sources.list.d/debian.sources && \
   dpkg --add-architecture i386 && \
   mkdir -pm755 /etc/apt/keyrings && \
   apt-get update && \
-  apt-get install -y --install-recommends gnupg2 wget ca-certificates && \
+  apt-get install -y gnupg2 wget curl ca-certificates && \
   wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
   wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/debian/dists/bookworm/winehq-bookworm.sources && \
   apt-get update && \
-  apt-get install -y mkvtoolnix ffmpeg curl unzip && \
-  apt-get install -y --install-recommends winehq-stable xorg xserver-xorg-video-dummy xvfb libvulkan1 libvulkan1:i386 vulkan-tools mesa-utils mesa-utils-extra mesa-vulkan-drivers mesa-vulkan-drivers:i386 mesa-vdpau-drivers mesa-vdpau-drivers:i386 mesa-va-drivers mesa-va-drivers:i386 && \
+  apt-get install -y mkvtoolnix ffmpeg unzip && \
+  apt-get install -y winehq-stable xorg xserver-xorg-video-dummy xvfb libvulkan1 libvulkan1:i386 vulkan-tools mesa-utils mesa-utils-extra mesa-vulkan-drivers mesa-vulkan-drivers:i386 mesa-vdpau-drivers mesa-vdpau-drivers:i386 mesa-va-drivers mesa-va-drivers:i386 && \
   debug_packages="nano strace less" && \
-  apt-get install -y --install-recommends $debug_packages && \
+  apt-get install -y $debug_packages && \
   apt-get clean
 
 # Download FRIMDecode 64
@@ -22,10 +21,6 @@ RUN \
   mkdir -p /tmp/frimdecode && \
   cd /tmp/frimdecode && \
   curl -L 'https://www.videohelp.com/download/FRIM_x64_version_1.29.zip' -H 'Referer: https://www.videohelp.com/software/FRIM/old-versions' -o FRIM_x64.zip && \
-  #expected_sha512=f59592a72996a3663906f7e80edee7d58f7479a692a97471b90fe56b7ac91c9afff36fce37bd115d651172a265346fd7f23d6043a932eff9224acd43de256e43 && \
-  #actual_sha512=$(sha512sum FRIM_x64.zip | cut -d' ' -f1) && \
-  #if [ "$expected_sha512" != "$actual_sha512" ]; then echo "SHA512 mismatch" && exit 1; fi && \
-  #echo "SHA512 match" && \
   # unpack FRIMDecode and install to /usr/local/bin
   unzip FRIM_x64.zip && \
   mv x64/ /usr/local/bin/FRIMDecode64 && \
@@ -37,10 +32,6 @@ RUN \
   mkdir -p /tmp/frimdecode && \
   cd /tmp/frimdecode && \
   curl -L 'https://www.videohelp.com/download/FRIM_x86_version_1.29.zip' -H 'Referer: https://www.videohelp.com/software/FRIM/old-versions' -o FRIM_x86.zip && \
-  #expected_sha512=150564abdce63e64857334d03d2ac6d8b0a1f8c727dd2b8fd4ed6a5926d3473d2bd10dfdacfa968eb38a54075605121e0ed403daea706938f7a6abcdc57c1729 && \
-  #actual_sha512=$(sha512sum FRIM_x86.zip | cut -d' ' -f1) && \
-  #if [ "$expected_sha512" != "$actual_sha512" ]; then echo "SHA512 mismatch" && exit 1; fi && \
-  #echo "SHA512 match" && \
   # unpack FRIMDecode and install to /usr/local/bin
   unzip FRIM_x86.zip && \
   mv x86/ /usr/local/bin/FRIMDecode32 && \
@@ -78,7 +69,15 @@ RUN \
   done \
   && while [ $(stat -c '%Y' $WINEPREFIX/user.reg) = $before ]; do sleep 1; done
 
+# Install d3d11-triangle.exe
+RUN \
+  mkdir -p /tmp/d3d11-triangle && \
+  cd /tmp/d3d11-triangle && \
+  curl -L 'https://gitlab.melroy.org/melroy/winegui/uploads/c4db93700d13dfb71997f28c2965aeb7/dxvk-test.tar.gz' -o triangle.tar.gz && \
+  tar -xzf triangle.tar.gz && \
+  mv dxvk-test /usr/local/bin/d3d11-triangle && \
+  rm -rf /tmp/d3d11-triangle
+
 COPY --chown=root:root --chmod=755 entrypoint.sh /entrypoint.sh
 COPY xorg.conf /etc/X11/xorg.conf.d/20-virt.conf
-COPY d3d11-triangle.exe /d3d11-triangle.exe
 ENTRYPOINT ["/entrypoint.sh"]
